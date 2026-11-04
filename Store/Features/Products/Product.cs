@@ -1,23 +1,35 @@
+using Store.Shared.Exceptions;
+
 namespace Store.Features.Products;
 
-public class Product
+public class Product(string name, decimal price)
 {
     // Properties
-    public Guid Id { get; set; }
-    public string Name { get; set; }
-    public decimal Price { get; set; }
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public string Name { get; private set; } = name;
+    public decimal Price { get; private set; } = price;
+    public bool IsActive { get; private set; } = true;
 
-    // Construtor
-    public Product(string name, decimal price)
+    // Methods
+    public void Update(string name, decimal price)
     {
-        Id = Guid.NewGuid();
         Name = name;
         Price = price;
     }
 
-    // Methods
-    public void ToDouble()
+    public void Activate()
     {
-        Price *= 2;
+        if (IsActive)
+            throw new ActivateDeactivateException("O produto já está ativo.");
+
+        IsActive = true;
+    }
+
+    public void Deactivate()
+    {
+        if (!IsActive)
+            throw new ActivateDeactivateException("O produto já está inativo.");
+
+        IsActive = false;
     }
 }

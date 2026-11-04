@@ -1,29 +1,24 @@
+using Scalar.AspNetCore;
 using Store.Features.Products;
+using Store.Shared.Contexts;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddScoped<DataContext>();
+
 builder.Services.AddOpenApi();
+builder.Services.AddProductDi();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
 
-app.MapGet("/", () =>
-{
-    var tv = new Product("TV", 2500.00m);
-    var videoGame = new Product("Video Game", 3600.25m);
-
-    var products = new Product[] { tv, videoGame };
-    
-    tv.ToDouble();
-    products = products.Append(tv).ToArray();
-
-    return products;
-});
+app.MapProductsApi();
 
 app.Run();
