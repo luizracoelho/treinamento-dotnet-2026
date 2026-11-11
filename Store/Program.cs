@@ -1,10 +1,13 @@
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Store.Features.Products;
 using Store.Shared.Contexts;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddScoped<DataContext>();
+var connectionString = builder.Configuration.GetConnectionString("StoreDb");
+
+builder.Services.AddDbContext<DataContext>(options => options.UseNpgsql(connectionString));
 
 builder.Services.AddOpenApi();
 builder.Services.AddProductDi();
