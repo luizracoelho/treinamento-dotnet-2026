@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Store.Shared.Exceptions;
 
@@ -10,7 +11,7 @@ public static class ProductApi
         var group = builder.MapGroup("/products").WithTags("Products");
 
         // Exemplo: https://store.com/products?search=televisao
-        group.MapGet("/", async ([FromServices] ProductApp app, [FromQuery] string? search) =>
+        group.MapGet("/", async Task<Ok<List<ProductVm>>> ([FromServices] ProductApp app, [FromQuery] string? search) =>
         {
             List<ProductVm> vms;
 
@@ -19,43 +20,55 @@ public static class ProductApi
             else
                 vms = await app.ListByNameAsync(search);
 
-            return Results.Ok(vms);
+            return TypedResults.Ok(vms);
         });
 
-        group.MapGet("/{id:guid}", async ([FromServices] ProductApp app, [FromRoute] Guid id) =>
+        group.MapGet("/{id:guid}", async Task<Ok<ProductVm>> ([FromServices] ProductApp app, [FromRoute] Guid id) =>
         {
-            try
-            {
-                var vm = await app.FindAsync(id);
-                return Results.Ok(vm);
-            }
-            catch (Exception e)
-            {
-                var problem = new ProblemDetails();
-                problem.Title = e.Message;
+            var vm = await app.FindAsync(id);
+            return TypedResults.Ok(vm);
+        }).ProducesProblem(StatusCodes.Status404NotFound);
 
-                if (e is NotFoundException)
-                    return Results.NotFound(problem);
-
-                return Results.BadRequest(problem);
-            }
-        });
-
-        group.MapPost("/", async ([FromServices] ProductApp app, [FromBody] ProductInputVm inputVm) =>
+        group.MapPost("/", async Task<Created<ProductVm>> ([FromServices] ProductApp app, [FromBody] ProductInputVm inputVm) =>
         {
-            try
-            {
-                var vm = await app.AddAsync(inputVm);
-                return Results.Ok(vm);
-            }
-            catch (Exception e)
-            {
-                var problem = new ProblemDetails();
-                problem.Title = e.Message;
+            var vm = await app.AddAsync(inputVm);
+            return TypedResults.Created($"/products/{vm?.Id}", vm);
+        }).ProducesProblem(StatusCodes.Status400BadRequest);
 
-                return Results.BadRequest(problem);
-            }
-        });
+        group.MapPut("/{id:guid}", async Task<Ok<ProductVm>> ([FromServices] ProductApp app, [FromRoute] Guid id, [FromBody] ProductInputVm inputVm) =>
+            {
+                var vm = await app.UpdateAsync(id, inputVm);
+                return TypedResults.Ok(vm);
+            })
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapDelete("/{id:guid}", async Task<Ok<ProductVm>> ([FromServices] ProductApp app, [FromRoute] Guid id) =>
+            {
+                var vm = await app.RemoveAsync(id);
+                return TypedResults.Ok(vm);
+            })
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+        ;
+
+        group.MapPatch("/{id:guid}/activate", async Task<Ok<ProductVm>> ([FromServices] ProductApp app, [FromRoute] Guid id) =>
+            {
+                var vm = await app.ActivateAsync(id);
+                return TypedResults.Ok(vm);
+            })
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+        ;
+
+        group.MapPatch("/{id:guid}/deactivate", async Task<Ok<ProductVm>> ([FromServices] ProductApp app, [FromRoute] Guid id) =>
+            {
+                var vm = await app.DeactivateAsync(id);
+                return TypedResults.Ok(vm);
+            })
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+        ;
 
         return builder;
     }

@@ -16,9 +16,9 @@ public class ProductService(ProductRepo repo)
     public async Task<Product?> AddAsync(Product product)
         => await repo.AddAsync(product);
 
-    public async Task<Product?> UpdateAsync(Product product)
+    public async Task<Product?> UpdateAsync(Guid id, Product product)
     {
-        var existingProduct = await FindAndValidateAsync(product.Id);
+        var existingProduct = await FindAndValidateAsync(id);
 
         existingProduct.Update(product.Name, product.Price);
 

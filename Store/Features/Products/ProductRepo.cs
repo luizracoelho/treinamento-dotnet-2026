@@ -6,12 +6,12 @@ namespace Store.Features.Products;
 public class ProductRepo(DataContext context)
 {
     public async Task<List<Product>> ListAsync()
-        => await context.Products.ToListAsync();
+        => await context.Products.OrderBy(p => p.Name).ToListAsync();
 
     public async Task<List<Product>> ListByNameAsync(string name)
         => await context.Products.Where(x =>
             x.Name.Trim().ToLower().Contains(name.Trim().ToLower())
-        ).ToListAsync();
+        ).OrderBy(p => p.Name).ToListAsync();
 
     public async Task<Product?> FindAsync(Guid id)
         => await context.Products.FindAsync(id);
